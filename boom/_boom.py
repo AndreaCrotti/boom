@@ -24,6 +24,8 @@ logger = logging.getLogger('boom')
 _VERBS = ('GET', 'POST', 'DELETE', 'PUT', 'HEAD', 'OPTIONS')
 _DATA_VERBS = ('POST', 'PUT')
 
+MAX_REDIRECTS = 50
+
 
 class RunResults(object):
     """Encapsulates the results of a single Boom run.
@@ -160,9 +162,7 @@ def onecall(method, url, results, **options):
         method, url, options = options['hook'](method, url, options)
         del options['hook']
 
-    if 'follow_redirect':
-        pass
-
+    follow_redirect = options.pop('follow_redirect')
     try:
         res = method(url, **options)
     except RequestException as exc:
@@ -170,9 +170,13 @@ def onecall(method, url, results, **options):
     else:
         duration = time.time() - start
         results.status_code_counter[res.status_code].append(duration)
-        if options.get('follow_redirect', False):
-            if res.status_code == 302:
-                pass
+        if follow_redirect:
+            while True:
+                if res.status_code != 302:
+                    break
+                else:
+                    # handle the redirection case
+                    pass
 
     finally:
         results.incr()
@@ -203,6 +207,8 @@ def run(url, num=1, duration=None, method='GET', data=None, ct='text/plain',
 
     if auth is not None:
         options['auth'] = tuple(auth.split(':', 1))
+
+    options['follow_redirect'] = follow_redirect
 
     pool = Pool(concurrency)
 
