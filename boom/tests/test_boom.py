@@ -107,6 +107,11 @@ class TestBoom(unittest.TestCase):
         for error in run_results.errors:
             self.assertIsInstance(error, requests.ConnectionError)
 
+    def test_follow_redirects(self):
+        run_results = runboom(self.server + '/redir', num=2, concurrency=1,
+                              quiet=True, follow_redirect=True)
+        # the page I should actually have is now?
+
     def test_too_many_redirects(self):
         run_results = runboom(self.server + '/redir', num=2, concurrency=1,
                               quiet=True)

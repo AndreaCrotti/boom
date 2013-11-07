@@ -160,6 +160,9 @@ def onecall(method, url, results, **options):
         method, url, options = options['hook'](method, url, options)
         del options['hook']
 
+    if 'follow_redirect':
+        pass
+
     try:
         res = method(url, **options)
     except RequestException as exc:
@@ -167,12 +170,17 @@ def onecall(method, url, results, **options):
     else:
         duration = time.time() - start
         results.status_code_counter[res.status_code].append(duration)
+        if options.get('follow_redirect', False):
+            if res.status_code == 302:
+                pass
+
     finally:
         results.incr()
 
 
 def run(url, num=1, duration=None, method='GET', data=None, ct='text/plain',
-        auth=None, concurrency=1, headers=None, hook=None, quiet=False):
+        auth=None, concurrency=1, headers=None, hook=None, quiet=False,
+        follow_redirect=False):
 
     if headers is None:
         headers = {}
@@ -249,7 +257,7 @@ def resolve(url):
 
 
 def load(url, requests, concurrency, duration, method, data, ct, auth,
-         headers=None, hook=None, quiet=False):
+         headers=None, hook=None, quiet=False, follow_redirect=False):
     if not quiet:
         print_server_info(url, method, headers=headers)
 
@@ -263,7 +271,8 @@ def load(url, requests, concurrency, duration, method, data, ct, auth,
         sys.stdout.write('Starting the load')
     try:
         return run(url, requests, duration, method, data, ct,
-                   auth, concurrency, headers, hook, quiet=quiet)
+                   auth, concurrency, headers, hook, quiet=quiet,
+                   follow_redirect=follow_redirect)
     finally:
         if not quiet:
             print(' Done')
@@ -305,6 +314,10 @@ def main():
                              'default format',
                         action='store_true')
 
+    parser.add_argument('--follow_redirect',
+                        help='Follow redirects',
+                        action='store_true')
+
     group = parser.add_mutually_exclusive_group()
 
     group.add_argument('-n', '--requests', help='Number of requests',
@@ -312,6 +325,7 @@ def main():
 
     group.add_argument('-d', '--duration', help='Duration in seconds',
                        type=int)
+
 
     parser.add_argument('url', help='URL to hit', nargs='?')
     args = parser.parse_args()
@@ -361,7 +375,9 @@ def main():
     try:
         res = load(url, args.requests, args.concurrency, args.duration,
                    args.method, args.data, args.content_type, args.auth,
-                   headers=headers, hook=args.hook, quiet=args.json_output)
+                   headers=headers, hook=args.hook, quiet=args.json_output,
+                   follow_redirect=args.follow_redirect)
+
     except RequestException as e:
         print_errors((e, ))
         sys.exit(1)
