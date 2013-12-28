@@ -276,7 +276,7 @@ def load(url, requests, concurrency, duration, method, data, ct, auth,
             print(' Done')
 
 
-def main():
+def parse_arguments():
     parser = argparse.ArgumentParser(description='Simple HTTP Load runner.')
 
     parser.add_argument('--version', action='store_true', default=False,
@@ -321,8 +321,12 @@ def main():
                        type=int)
 
     parser.add_argument('url', help='URL to hit', nargs='?')
-    args = parser.parse_args()
+    return parser
 
+
+def main():
+    parser = parse_arguments()
+    args = parser.parse_args()
     if args.version:
         print(__version__)
         sys.exit(0)
