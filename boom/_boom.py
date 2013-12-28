@@ -24,6 +24,13 @@ logger = logging.getLogger('boom')
 _VERBS = ('GET', 'POST', 'DELETE', 'PUT', 'HEAD', 'OPTIONS')
 _DATA_VERBS = ('POST', 'PUT')
 
+BSI_FROM_RPS = [
+    (500, 'Wooooooo Fast'),
+    (100, 'Pretty good'),
+    (50,  'Meh'),
+    (0,   'Hahahaha')
+]
+
 
 class RunResults(object):
     """Encapsulates the results of a single Boom run.
@@ -86,6 +93,13 @@ def calc_stats(results):
     return RunStats(count, results.total_time, rps, avg, min_, max_, amp)
 
 
+def print_bsi(rps):
+    for val, bsi in BSI_FROM_RPS:
+        if rps > val:
+            print('BSI              \t\t%s\n' % bsi)
+            break
+
+
 def print_stats(results):
     stats = calc_stats(results)
     rps = stats.rps
@@ -100,16 +114,9 @@ def print_stats(results):
     print('Slowest          \t\t%.4f s' % stats.max)
     print('Amplitude        \t\t%.4f s' % stats.amp)
     print('RPS              \t\t%d' % rps)
-    if rps > 500:
-        print('BSI              \t\tWoooooo Fast')
-    elif rps > 100:
-        print('BSI              \t\tPretty good')
-    elif rps > 50:
-        print('BSI              \t\tMeh')
-    else:
-        print('BSI              \t\tHahahaha')
-    print('')
+    print_bsi(rps)
     print('-------- Status codes --------')
+
     for code, items in results.status_code_counter.items():
         print('Code %d          \t\t%d times.' % (code, len(items)))
     print('')
